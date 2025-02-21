@@ -1,0 +1,35 @@
+[project]
+
+name = "terminus-nitf-python"
+version = "0.0.1"
+description = "Mostly Pure-Python NITF API"
+license = {file = "LICENSE"}
+readme = "Readme.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3.11"
+]
+
+#  Dependencies
+dependencies = [
+    'terminus_core_python',
+    'numpy',
+    'pyproj'
+]
+
+#  Optional Dependencies
+[project.optional-dependencies]
+dev = [ 'black',
+        'rasterio' ]
+
+#  Project Information
+[project.urls]
+"Homepage" = "https://github.com/Terminus-Geospatial/terminus-nitf-python"
+
+[project.scripts]
+tmns-nitf-info = "tmns.nitf.apps.tmns_nitf_info.main:run_command"
+
+#  Configure the build system
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
