@@ -15,7 +15,9 @@ import logging
 #  Terminus Libraries
 from tmns.core.apps import run, ArgumentParser, configure_logging
 from tmns.nitf.core import load_nitf
+from tmns.nitf.image.factory import Driver_Factory
 from tmns.nitf.tre  import TRE_Factory
+from tmns.nitf.apps.tmns_nitf_info.plotly import render_html
 
 def parse_command_line():
 
@@ -26,6 +28,17 @@ def parse_command_line():
                          default = logging.INFO,
                          action = 'store_const',
                          const = logging.DEBUG )
+    
+    parser.add_argument( '--viz',
+                         dest = 'create_viz',
+                         default = False,
+                         action = 'store_true',
+                         help = 'Create Plotly vis of file contents' )
+    
+    parser.add_argument( '--viz-type',
+                         dest='viz_type',
+                         default = 'dash',
+                         help = 'Set the rendering viz mode' )
     
     parser.add_argument( dest = 'nitf_paths',
                          action = 'append',
@@ -41,16 +54,26 @@ def main():
 
     #  Configure the logger
     logger = configure_logging( log_level = cmd_args.log_level,
-                                app_name  = 'tmns.nitf.apps.tmns_nitf_info:main' )
+                                app_name  = 'tmns_nitf_info:main' )
 
-    factory = TRE_Factory.default()
-    logger.info( factory )
+    #  Setup the TRE Factory Builder
+    tre_factory = TRE_Factory.default()
+    logger.debug( tre_factory )
+
+    #  Setup the Image Driver Factory
+    img_factory = Driver_Factory.default()
+    logger.debug( img_factory )
 
     #  Process each NITF in sequence
     for nitf_path in cmd_args.nitf_paths:
 
-        nitf_data = load_nitf( nitf_path, tre_factory = factory )
-    
+        nitf_data = load_nitf( nitf_path, 
+                               tre_factory = tre_factory,
+                               img_factory = img_factory )
+
+        render_html( nitf_data,
+                     logger = logger )
+        
 
 def run_command():
     run(main)

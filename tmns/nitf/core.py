@@ -21,6 +21,9 @@ from tmns.nitf.fhdr import (
     Field as FHDR_Field,
     File_Header
 )
+from tmns.nitf.imgseg import ( 
+    Image_Segment
+)
 from tmns.nitf.imsubhdr import ( 
     Field as IMGSUB_Field,
     Image_Subheader
@@ -32,6 +35,7 @@ from tmns.nitf.tre import TRE_Factory
 def load_nitf( pathname,
                options: list = [],
                logger = None,
+               img_factory = None,
                tre_factory = None ):
     
     #  Setup logger, if not already set
@@ -67,7 +71,7 @@ def load_nitf( pathname,
             logger.error( error_str )
 
         #  Read the image subheader
-        image_subheaders = []
+        image_segments = []
         numi = fhdr.get( FHDR_Field.NUMI )['data'].value()
         for idx in range( numi ):
 
@@ -75,8 +79,9 @@ def load_nitf( pathname,
             imgsub_size = fhdr.get( FHDR_Field.LISH_N, index = idx )
 
             #  Parse image subheader
-            img_subheader = Image_Subheader.parse_binary( file_handle = fin )
-            logging.info( img_subheader )
+            img_subheader = Image_Subheader.parse_binary( file_handle = fin,
+                                                          tre_factory = tre_factory )
+            logging.debug( img_subheader )
             
             #  Validate and check for errors
             errors = img_subheader.validate()
@@ -84,15 +89,18 @@ def load_nitf( pathname,
                 error_str = f'Image Subheader {idx} Errors: {len(errors)}\n'
                 for x in range( len(errors) ):
                     error_str += f'{errors[x]}\n'
-            logger.error( error_str )
-
-            #  Add to subheader list
-            image_subheaders.append( img_subheader )
+                logger.error( error_str )
 
             #  Parse image segment
-            imgseg_size = fhdr.get( FHDR_Field.LI_N,   index = idx )
+            imgseg_size = fhdr.get( FHDR_Field.LI_N,   index = idx )['data'].value()
+            logger.debug( f'Reading Image Segment {idx+1} at {imgseg_size} bytes' )
+            image_buffer = fin.read( imgseg_size )
+
+            image_segments.append( Image_Segment( subheader = img_subheader,
+                                                  buffer    = image_buffer,
+                                                  factory   = img_factory ) )
 
 
-        return NITF_Container( file_header      = fhdr,
-                               image_subheaders = image_subheaders )
+        return NITF_Container( file_header    = fhdr,
+                               image_segments = image_segments )
 

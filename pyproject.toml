@@ -13,14 +13,19 @@ classifiers = [
 #  Dependencies
 dependencies = [
     'terminus_core_python',
+    'matplotlib',
     'numpy',
-    'pyproj'
+    'prettytable',
+    'pyproj',
+    'Pillow',
+    'scikit-image'
 ]
 
 #  Optional Dependencies
 [project.optional-dependencies]
 dev = [ 'black',
-        'rasterio' ]
+        'rasterio',
+        'plotly' ]
 
 #  Project Information
 [project.urls]

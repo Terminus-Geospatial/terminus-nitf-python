@@ -9,30 +9,24 @@
 #**************************** INTELLECTUAL PROPERTY RIGHTS ****************************#
 #
 
+#  Python Libraries
+import logging
+import unittest
 
-class NITF_Container:
+#  Terminus Libraries
+import tmns.nitf.utils as utils
 
-    def __init__(self, file_header, image_segments ):
+class TEST_utils_BitSet(unittest.TestCase):
+
+    def test_uint32_( self ):
+
+        #  Create bitset for the BANDSB TRE Existance Flag
+        bitset = utils.BitSet( num_bits=32, initial_value = 4720411 )
+
+        print(bitset.to_log_string())
+
+        bitset = utils.BitSet( num_bits=32, initial_value = 453462016 )
+
+        print(bitset.to_log_string())
+         
         
-        self.file_header    = file_header
-        self.image_segments = image_segments
-
-    def get_image( self, img_seg = 0 ):
-
-        return self.image_segments[img_seg].get_image()
-    
-    def as_kvp( self ):
-
-        data = {}
-        kvp = self.file_header.as_kvp()
-        for k in kvp.keys():
-            data[f'file_header.{k}'] = kvp[k]
-        
-        for idx in range( len( self.image_segments ) ):
-            kvp = self.image_segments[idx].as_kvp()
-            for k in kvp.keys():
-                data[f'image_segment.{idx}.{k}'] = kvp[k]
-
-        return data
-
-    

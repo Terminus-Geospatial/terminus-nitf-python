@@ -9,30 +9,39 @@
 #**************************** INTELLECTUAL PROPERTY RIGHTS ****************************#
 #
 
+#  Python Libraries
 
-class NITF_Container:
 
-    def __init__(self, file_header, image_segments ):
+#  Terminus Libraries
+from tmns.nitf.enums import ImageCompression
+from tmns.nitf.image.opj_driver import OPJ_Driver
+
+class Driver_Factory:
+
+    def __init__(self):
         
-        self.file_header    = file_header
-        self.image_segments = image_segments
-
-    def get_image( self, img_seg = 0 ):
-
-        return self.image_segments[img_seg].get_image()
-    
-    def as_kvp( self ):
-
-        data = {}
-        kvp = self.file_header.as_kvp()
-        for k in kvp.keys():
-            data[f'file_header.{k}'] = kvp[k]
-        
-        for idx in range( len( self.image_segments ) ):
-            kvp = self.image_segments[idx].as_kvp()
-            for k in kvp.keys():
-                data[f'image_segment.{idx}.{k}'] = kvp[k]
-
-        return data
+        self.decode_drivers = {}
+        self.encode_drivers = {}
 
     
+    def register_driver( self, code, decode_driver = None, encode_driver = None ):
+        
+        if decode_driver != None:
+            self.decode_drivers[code] = decode_driver
+        if encode_driver != None:
+            self.encode_drivers[code] = encode_driver
+
+    def decode( self, code, buffer ):
+
+        return self.decode_drivers[code].decode( code, buffer )
+
+    
+    @staticmethod
+    def default():
+
+        factory = Driver_Factory()
+
+        factory.register_driver( ImageCompression.C8, OPJ_Driver(), OPJ_Driver() )
+
+        return factory
+

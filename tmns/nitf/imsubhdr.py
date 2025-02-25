@@ -15,7 +15,9 @@ from enum import Enum
 import logging
 
 #  Terminus Libraries
-from tmns.nitf.types import FieldType
+from tmns.nitf.tre   import ( TRE_Base,
+                              TRE_Factory )
+from tmns.nitf.field_types import FieldType
 
 class Field(Enum):
     '''
@@ -96,16 +98,18 @@ class Field(Enum):
                  Field.ISCTLN,  Field.ENCRYP,  Field.ISORCE,  Field.NROWS,   Field.NCOLS,
                  Field.PVTYPE,  Field.IREP,    Field.ICAT,    Field.ABPP,    Field.PJUST,
                  Field.ICORDS,  Field.IGEOLO,  Field.NICOM,   Field.IC,      Field.COMRAT,
-                 Field.NBANDS,  Field.XBANDS,  Field.ISYNC,   Field.IMODE,   Field.NBPR,
-                 Field.NBPC,    Field.NPPBH,   Field.NPPBV,   Field.NBPP,    Field.IDLVL,
-                 Field.IALVL,   Field.ILOC,    Field.IMAG,    Field.UDIDL,   Field.UDOFL,
-                 Field.UDID,    Field.IXSHDL,  Field.IXSOFL,  Field.IXSHD ]
+                 Field.NBANDS,  Field.ISYNC,   Field.IMODE,   Field.NBPR,    Field.NBPC,
+                 Field.NPPBH,   Field.NPPBV,   Field.NBPP,    Field.IDLVL,   Field.IALVL,
+                 Field.ILOC,    Field.IMAG,    Field.UDIDL,   Field.UDID,    Field.IXSHDL,
+                 Field.IXSHD ]
 
 
 class Image_Subheader:
 
-    def __init__( self, data ):
-        self.data = data
+    def __init__( self, data, udid, ixshd ):
+        self.data  = data
+        self.udid  = udid
+        self.ixshd = ixshd
 
     def get( self, field ):
 
@@ -113,6 +117,24 @@ class Image_Subheader:
             if self.data[k]['field'] == field:
                 return self.data[k]
         return None
+
+    def as_kvp(self):
+
+        data = {}
+
+        #  Primary Image Data
+        for k in self.data.keys():
+            data[self.data[k]['field'].name] = str(self.data[k]['data'])
+
+        #  UDID
+        if self.udid != None:
+            pass
+
+        #  IXSHD
+        if self.ixshd != None:
+            pass
+
+        return data
 
     def validate( self ):
 
@@ -127,21 +149,43 @@ class Image_Subheader:
         output  = 'NITF Image Subheader:\n'
         for field in self.data.keys():
             output += f'   Pos {field}, Name: {self.data[field]["name"]}, Value: {self.data[field]["data"].value()}\n'
+        
+        output += f'   UDID TREs: ({len(self.udid)})\n'
+        for tre in self.udid:
+            output += tre.to_log_string( 4 )
+        
+        output += f'   IXSHD TREs: ({len(self.ixshd)})\n'
+        for tre in self.ixshd:
+            output += tre.to_log_string( 4 )
+
         return output
     
     
     @staticmethod
-    def parse_binary( file_handle, logger = None ):
+    def parse_binary( file_handle, logger = None, tre_factory = None ):
 
         if logger is None:
             logger = logging.getLogger( 'tmns.nitf.imgseg.Image_Subheader.parse_binary' )
+
+        if tre_factory == None:
+            tre_factory = TRE_Factory.default()
+
         data = {}
 
         #  Read block by block
         fields = deque(Field.default_list())
         offset = 0
         size_queue = deque()
+        nbands = None
+        xbands = None
+        nluts  = None
+        nelut = None
+        udid_tres = []
+        ixshd_tres = []
+
         while len(fields) > 0:
+
+            add_entry = True
 
             #  Grab next field
             field = fields.popleft()
@@ -155,51 +199,106 @@ class Image_Subheader:
             field_default   = fld[3]
             field_is_fixed  = fld[4]
             field_name      = fld[5]
-            logger.debug( f'Processing ID {field_pos}, Name: {field}, Len: {field_length}, Type: {field_type} ')
+            #logger.debug( f'Processing ID {field_pos}, Name: {field}, Len: {field_length}')
 
-            if field_length == 0:
+            if field_length == 0 and len(size_queue) > 0:
                 field_length = size_queue.popleft()
 
             #  Read a block of data
             field_data = file_handle.read( field_length )
-            if len(field_data) != fld[1]:
-                raise Exception( f'Reached end of file before field. Field: {field}' )
+            if len(field_data) != field_length:
+                raise Exception( f'Reached end of file before field. Field: {field}, Bytes Read: {len(field_data)}, Bytes Requested: {fld[1]}' )
             
             #  Convert to appropriate type
             field_type = FieldType.to_type( field_type )
-            data[offset] = { 'name': Field(field).name,
-                             'field': field,
-                             'type': field_type,
-                             'data': field_type(field_data, field_length) }
-            logging.debug( f'    -> Value: {data[offset]["data"].value()}' )
+            new_entry = { 'name': Field(field).name,
+                          'field': field,
+                          'type': field_type,
+                          'data': field_type(field_data, field_length) }
+            #logging.debug( f'    -> Value: [{new_entry["data"].value()}]' )
 
             #  Number of Image Comments
             if field == Field.NICOM:
-                nicom = data[offset]['data'].value()
-                if nicom > 0:
-                    fields.appendleft( Field.ICOM_N )
+                nicom = new_entry['data'].value()
+                for _ in range( nicom ):
+                    fields.appendleft( Field.ICOM_N  )
             
             # Image Band Data
-            if field == Field.XBANDS:
-                nbands = data[offset-1]['data'].value()
-                xbands = data[offset]['data'].value()
+            if field == Field.NBANDS:
+                nbands = new_entry['data'].value()
+                if nbands == 0:
+                    fields.appendleft( Field.XBANDS )
+                else:
+                    xbands = -1
 
+            if field == Field.XBANDS:
+                xbands = new_entry['data'].value()
+
+            if ( field == Field.NBANDS and nbands != 0 ) or field == Field.XBANDS:
+                
                 val = max( nbands, xbands )
                 for idx in range( val ):
-                    fields.appendleft( Field.IREPBAND_N )
-                    fields.appendleft( Field.ISUBCAT_N )
-                    fields.appendleft( Field.IFC_N )
                     fields.appendleft( Field.NLUTS_N )
-                    fields.appendleft( Field.NELUT_N )
+                    fields.appendleft( Field.IMFLT_N )
+                    fields.appendleft( Field.IFC_N )
+                    fields.appendleft( Field.ISUBCAT_N )
+                    fields.appendleft( Field.IREPBAND_N )
             
             # Band LUTs
+            if field == Field.NLUTS_N:
+                nluts = new_entry['data'].value()
+                if nluts > 0:
+                    fields.appendleft( Field.NELUT_N )
+
             if field == Field.NELUT_N:
                 nluts = data[offset-1]['data'].value()
-                nelut = data[offset]['data'].value()
+                nelut = new_entry['data'].value()
 
                 total = nluts * nelut
                 size_queue.appendleft( total )
-            
-            offset += 1
 
-        return Image_Subheader( data = data )
+                fields.appendleft( Field.LUTD_N_M )
+
+            if field == Field.ISYNC:
+                nluts = None
+                nelut = None
+
+            #  User Defined Data
+            if field == Field.UDIDL:
+                udidl = new_entry['data'].value()
+
+                #  The overflow only counts if we max the user defined section
+                if udidl == 99999:
+                    fields.appendleft( Field.UDOFL )
+                size_queue.append( udidl )
+            
+            #  User Defined Image Data TREs
+            if field == Field.UDID:
+                udid_data = new_entry['data'].data[3:]
+                udid_tres  = TRE_Base.parse_binary( udid_data,
+                                                    factory = tre_factory )
+                add_entry = False
+            
+            #  Image Extended Subheader
+            if field == Field.IXSHDL:
+                ixshdl = new_entry['data'].value()
+
+                #  The overflow only counts if we max the user defined section
+                if ixshdl == 99999:
+                    fields.appendleft( Field.IXSOFL )
+                size_queue.append( ixshdl )
+            
+            # Image Extended Subheader Data
+            if field == Field.IXSHD:
+                ixshd_data = new_entry['data'].data[3:]
+                ixshd_tres = TRE_Base.parse_binary( ixshd_data,
+                                                    factory = tre_factory )
+                add_entry = False
+
+            if add_entry:
+                data[offset] = new_entry
+                offset += 1
+
+        return Image_Subheader( data = data,
+                                udid  = udid_tres,
+                                ixshd = ixshd_tres )

@@ -9,30 +9,34 @@
 #**************************** INTELLECTUAL PROPERTY RIGHTS ****************************#
 #
 
+#  Python Libraries
+from enum import Enum
 
-class NITF_Container:
+class ImageCompression(Enum):
 
-    def __init__(self, file_header, image_segments ):
-        
-        self.file_header    = file_header
-        self.image_segments = image_segments
+    C1 =  0
+    C3 =  1
+    C4 =  2
+    C5 =  3
+    C6 =  4
+    C7 =  5
+    C8 =  6
+    I1 =  7
+    M1 =  8
+    M3 =  9
+    M4 = 10
+    M5 = 11
+    M6 = 12
+    M7 = 13
+    M8 = 14
+    NC = 15
+    NM = 16
 
-    def get_image( self, img_seg = 0 ):
+    @staticmethod
+    def from_str( s ):
+        for x in ImageCompression:
+            if x.name.lower() == s.lower():
+                return x
 
-        return self.image_segments[img_seg].get_image()
-    
-    def as_kvp( self ):
-
-        data = {}
-        kvp = self.file_header.as_kvp()
-        for k in kvp.keys():
-            data[f'file_header.{k}'] = kvp[k]
-        
-        for idx in range( len( self.image_segments ) ):
-            kvp = self.image_segments[idx].as_kvp()
-            for k in kvp.keys():
-                data[f'image_segment.{idx}.{k}'] = kvp[k]
-
-        return data
 
     

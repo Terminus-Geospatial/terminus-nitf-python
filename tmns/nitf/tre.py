@@ -15,11 +15,16 @@ import logging
 
 #  Terminus Libraries
 from tmns.nitf.tres.base   import TRE_Base
+from tmns.nitf.tres.acchzb import ACCHZB
+from tmns.nitf.tres.acftb  import ACFTB
+from tmns.nitf.tres.aimidb import AIMIDB
+from tmns.nitf.tres.bandsb import BANDSB
+from tmns.nitf.tres.blocka import BLOCKA
 from tmns.nitf.tres.ccinfa import CCINFA
 from tmns.nitf.tres.csdida import CSDIDA
 from tmns.nitf.tres.engrda import ENGRDA
 from tmns.nitf.tres.matesa import MATESA
-from tmns.nitf.types import FieldType
+from tmns.nitf.field_types import FieldType
 
 
 class TRE_Factory:
@@ -54,6 +59,11 @@ class TRE_Factory:
         factory = TRE_Factory()
 
         #  Create a set of default TRE builders
+        factory.register( ACFTB.__name__,    ACFTB.build,    ACFTB.is_valid )
+        factory.register( ACCHZB.__name__,   ACCHZB.build,   ACCHZB.is_valid )
+        factory.register( AIMIDB.__name__,   AIMIDB.build,   AIMIDB.is_valid )
+        factory.register( BANDSB.__name__,   BANDSB.build,   BANDSB.is_valid )
+        factory.register( BLOCKA.__name__,   BLOCKA.build,   BLOCKA.is_valid )
         factory.register( CCINFA.__name__,   CCINFA.build,   CCINFA.is_valid )
         factory.register( CSDIDA.__name__,   CSDIDA.build,   CSDIDA.is_valid )
         factory.register( ENGRDA.__name__,   ENGRDA.build,   ENGRDA.is_valid )

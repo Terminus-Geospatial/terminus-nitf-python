@@ -15,7 +15,7 @@ from enum import Enum
 
 #  Terminus Libraries
 from tmns.nitf.tre   import TRE_Base
-from tmns.nitf.types import FieldType
+from tmns.nitf.field_types import FieldType
 
 class Field(Enum):
     CETAG           = (  0,  6, FieldType.BCS_A,  'CSDIDA',  True, 'Unique Extension Type Identifier' )
@@ -96,7 +96,6 @@ class MATESA( TRE_Base ):
                 act_len = data[counter-1]['data'].value()
 
             value, cedata = TRE_Base.parse_field( cedata, field, override_length = act_len )
-            print( f'Field: {field.name}, Value: [{value['data'].value()}], Len: {act_len}' )
             data[counter] = value
             counter += 1
 

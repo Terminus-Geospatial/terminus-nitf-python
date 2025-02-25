@@ -14,8 +14,8 @@ from collections import deque
 from enum import Enum
 
 #  Terminus Libraries
-from tmns.nitf.tre   import TRE_Base
-from tmns.nitf.types import FieldType
+from tmns.nitf.tre         import TRE_Base
+from tmns.nitf.field_types import FieldType
 
 class Field(Enum):
     CETAG     = (  0,  6, FieldType.BCS_A,  '    ENGRDA',  'Unique Extension Type Identifier' )
@@ -23,7 +23,7 @@ class Field(Enum):
     RESRC     = (  2, 20, FieldType.BCS_A,          None,  'Unique Source System Name' )
     RECNT     = (  3,  3, FieldType.BCS_NP,         None,  'Record Entry Count' )
     ENGLN_N   = (  4,  2, FieldType.BCS_NP,         None,  'Engineering Data Label Length' )
-    ENGLBL_N  = (  5,  0, FieldType.BCS_NP,         None,  'Engineering Data Label' )
+    ENGLBL_N  = (  5,  0, FieldType.BCS_A,          None,  'Engineering Data Label' )
     ENGMTXC_N = (  6,  4, FieldType.BCS_NP,         None,  'Engineering Matrix Data Column Count' )
     ENGMTXR_N = (  7,  4, FieldType.BCS_NP,         None,  'Engineering Matrix Data Row Count' )
     ENGTYP_N  = (  8,  1, FieldType.BCS_A,          None,  'Value Type of Engineering Data Element' )
@@ -106,6 +106,7 @@ class ENGRDA( TRE_Base ):
         while len(field_list) > 0:
 
             field = field_list.popleft()
+            #print( f'Processing Field: {field.name}' )
             
             #  Get the code length
             act_len = None
@@ -113,7 +114,6 @@ class ENGRDA( TRE_Base ):
                 act_len = data[counter-1]['data'].value()
 
             value, cedata = TRE_Base.parse_field( cedata, field, override_length = act_len )
-            print( f'Field: {field.name}, Value: [{value['data'].value()}], Len: {act_len}' )
             data[counter] = value
             counter += 1
 
@@ -128,6 +128,15 @@ class ENGRDA( TRE_Base ):
             vals[field] = value['data'].value()
             
             if field == Field.ENGDATC_N:
-                print( 'Values: ', vals )
+
+                num_elements = vals[Field.ENGDTS_N]
+
+                total = vals[Field.ENGMTXC_N] * vals[Field.ENGMTXR_N]
+                for id in range( total ):
+                    value, cedata = TRE_Base.parse_field( cedata, Field.ENGDATA_N, override_length = num_elements )
+                    data[counter] = value
+                    counter += 1
+
 
         return ENGRDA( data )
+    

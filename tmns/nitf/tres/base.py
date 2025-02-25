@@ -14,7 +14,7 @@ from enum import Enum
 import logging
 
 #  Terminus Libraries
-from tmns.nitf.types import FieldType
+from tmns.nitf.field_types import FieldType
 
 class Field(Enum):
     CETAG  = (  0,  6, FieldType.BCS_A,  None,  'Unique Extension Type Identifier' )

@@ -17,7 +17,7 @@ import logging
 #  Terminus Libraries
 from tmns.nitf.tre   import ( TRE_Base,
                               TRE_Factory )
-from tmns.nitf.types import FieldType
+from tmns.nitf.field_types import FieldType
 
 
 class Field(Enum):
@@ -113,6 +113,24 @@ class File_Header:
                     counter += 1
         return None
 
+    def as_kvp(self):
+
+        data = {}
+
+        #  Primary data
+        for k in self.data.keys():
+            data[self.data[k]['field'].name] = str(self.data[k]['data'])
+        
+        # 
+        if self.udhd != None:
+            for tre in self.udhd:
+                print('UDHD: ', tre)
+        
+        if self.xhd != None:
+            for tre in self.xhd:
+                print('XHD: ', tre)
+
+        return data
 
     def validate( self, file_size ):
 

@@ -11,6 +11,7 @@
 
 #  Python Libraries
 from enum import Enum
+import struct
 
 class FieldType(Enum):
 
@@ -18,8 +19,10 @@ class FieldType(Enum):
     BCS_N          = 1
     BCS_NP         = 2
     ECS_A          = 3
-    UnsignedBinary = 4
-    TRE            = 5
+    UINT32         = 4
+    UnsignedBinary = 5
+    IEEE_754_FLOAT = 6
+    TRE            = 7
 
     def __repr__(self):
         return self.name
@@ -43,9 +46,17 @@ class FieldType(Enum):
         if tp == FieldType.ECS_A:
             return ECS_A
         
+        # Unsigned Int32
+        if tp == FieldType.UINT32:
+            return UINT32
+        
         # Unsigned Binary
         if tp == FieldType.UnsignedBinary:
             return UnsignedBinary
+        
+        # IEEE_754_FLOAT
+        if tp == FieldType.IEEE_754_FLOAT:
+            return IEEE_754_FLOAT
         
         #  TRE Type
         if tp == FieldType.TRE:
@@ -109,9 +120,13 @@ class BCS_NP(NITF_Character_Set):
     
     def __str__(self):
         
-        output = self.data.decode("utf8")
-        if len(output) != self.field_size:
-            output += ' ' * (self.field_size - len(output))
+        output = ''
+        try:
+            output = self.data.decode("utf8")
+            if len(output) != self.field_size:
+                output += ' ' * (self.field_size - len(output))
+        except:
+            output = str(self.data)
         return output
 
     def __repr__(self):
@@ -140,6 +155,24 @@ class ECS_A(NITF_Character_Set):
     
     def value(self):
         return self.data.decode('utf8')
+
+class UINT32(NITF_Character_Set):
+
+    def __init__( self, data: bytes, field_size ):
+        
+        #  Internal data
+        self.data = data
+        self.field_size = field_size
+    
+    def __str__(self):
+        
+        return str(self.data) #str(self.value())
+
+    def __repr__(self):
+        return f'UINT32, Data: {self.value()}, Len: {self.field_size}'
+    
+    def value(self):
+        return struct.unpack( 'I', self.data )[0]
     
     
 class UnsignedBinary(NITF_Character_Set):
@@ -158,11 +191,29 @@ class UnsignedBinary(NITF_Character_Set):
         return output
 
     def __repr__(self):
-        return f'ECS_A, Data: {str(self)}'
+        return f'UnsignedBinary, Data: [{str(self.value())}], Len: {self.field_size}'
     
     def value(self):
         return self.data
+
+class IEEE_754_FLOAT(NITF_Character_Set):
+
+    def __init__( self, data: bytes, field_size ):
+
+        #  Internal data
+        self.data = data
+        self.field_size = field_size
     
+    def __str__(self):
+        return str(self.value())
+
+    def __repr__(self):
+        return f'IEEE_754_FLOAT, Data: {str(self)}'
+    
+    def value(self):
+        return struct.unpack( 'f', self.data )[0]
+
+
 class TRE(NITF_Character_Set):
 
     def __init__( self, data: bytes, field_size ):
