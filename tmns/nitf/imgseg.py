@@ -29,7 +29,6 @@ class Image_Segment:
         self.factory   = factory
 
     def as_kvp(self):
-
         return self.subheader.as_kvp()
     
     def get_image( self ):

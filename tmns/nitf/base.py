@@ -32,7 +32,7 @@ class NITF_Container:
             kvp = self.image_segments[idx].as_kvp()
             for k in kvp.keys():
                 data[f'image_segment.{idx}.{k}'] = kvp[k]
-
+                
         return data
 
     

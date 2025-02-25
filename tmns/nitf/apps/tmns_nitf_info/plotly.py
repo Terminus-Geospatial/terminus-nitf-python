@@ -32,8 +32,11 @@ def render_html( nitf_data, logger = None ):
     if logger == None:
         logger = logging.getLogger( 'tmns_nitf_info.plotly:render_html' )
 
+    print('a')
     metadata = nitf_data.as_kvp()
+    print('b')
     image    = nitf_data.get_image()
+    print('c')
     
     #  Create primary subplot
     fig = sp.make_subplots( rows = 2, cols = 1,

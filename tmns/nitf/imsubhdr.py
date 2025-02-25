@@ -126,13 +126,20 @@ class Image_Subheader:
         for k in self.data.keys():
             data[self.data[k]['field'].name] = str(self.data[k]['data'])
 
-        #  UDID
+        #
         if self.udid != None:
-            pass
+            for tre in self.udid:
+                cetag = tre.cetag()
+                tmp = tre.as_kvp()
+                for k in tmp.keys():
+                    data[f'udid.{cetag}.{k}'] = str(tmp[k])
 
-        #  IXSHD
         if self.ixshd != None:
-            pass
+            for tre in self.ixshd:
+                cetag = tre.cetag()
+                tmp = tre.as_kvp()
+                for k in tmp.keys():
+                    data[f'ixshd.{cetag}.{k}'] = str(tmp[k])
 
         return data
 

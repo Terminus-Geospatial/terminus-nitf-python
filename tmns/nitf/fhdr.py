@@ -124,11 +124,18 @@ class File_Header:
         # 
         if self.udhd != None:
             for tre in self.udhd:
-                print('UDHD: ', tre)
+                cetag = tre.cetag()
+                tmp = tre.as_kvp()
+                for k in tmp.keys():
+                    data[f'udhd.{cetag}.{k}'] = str(tmp[k])
+
         
         if self.xhd != None:
             for tre in self.xhd:
-                print('XHD: ', tre)
+                cetag = tre.cetag()
+                tmp = tre.as_kvp()
+                for k in tmp.keys():
+                    data[f'xhd.{cetag}.{k}'] = str(tmp[k])
 
         return data
 

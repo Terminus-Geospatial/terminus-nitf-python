@@ -37,6 +37,27 @@ class ACCHZB( TRE_Base ):
     def __str__(self):
         return self.to_log_string()
     
+    def get( self, field, index = 0 ):
+
+        counter = 0
+        for k in self.data.keys():
+            if self.data[k]['field'] == field:
+                if counter == index:
+                    return self.data[k]
+                else:
+                    counter += 1
+        return None
+    
+    def cetag(self):
+        return self.get( Field.CETAG )['data'].value()
+    
+    def as_kvp(self):
+
+        data = {}
+        for k in self.data.keys():
+            data[self.data[k]['field'].name] = str(self.data[k]['data'])
+        return data
+    
     def to_log_string( self, offset = 0 ):
         
         gap = ' ' * offset
