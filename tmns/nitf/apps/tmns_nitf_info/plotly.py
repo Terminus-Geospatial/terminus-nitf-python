@@ -41,7 +41,8 @@ def render_html( nitf_data, logger = None ):
     #  Create primary subplot
     fig = sp.make_subplots( rows = 2, cols = 1,
                             specs=[[{'type': 'table' }],
-                                   [{'type': 'scatter' }]] )
+                                   [{'type': 'scatter' }]],
+                            row_heights=[0.3,0.7] )
 
     fig.add_trace( go.Table( header = dict( values = ['Key', 'Value'] ),
                              cells  = dict( values = [ list(metadata.keys()),
@@ -53,6 +54,13 @@ def render_html( nitf_data, logger = None ):
     else:
         fig.add_trace( go.Image( z = image ), row = 2, col = 1 )
 
-    fig.show()
+    fig.update_layout( height = 1800 )
+
+    fig.update_yaxes(
+        scaleanchor="x",
+        scaleratio=1,
+    )
+    
+    fig.write_html( 'output.html' )
 
     

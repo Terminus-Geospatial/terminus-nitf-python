@@ -97,11 +97,10 @@ class Field(Enum):
                  Field.ISCLTX,  Field.ISCATP,  Field.ISCAUT,  Field.ISCRSN,  Field.ISSRDT,
                  Field.ISCTLN,  Field.ENCRYP,  Field.ISORCE,  Field.NROWS,   Field.NCOLS,
                  Field.PVTYPE,  Field.IREP,    Field.ICAT,    Field.ABPP,    Field.PJUST,
-                 Field.ICORDS,  Field.IGEOLO,  Field.NICOM,   Field.IC,      Field.COMRAT,
-                 Field.NBANDS,  Field.ISYNC,   Field.IMODE,   Field.NBPR,    Field.NBPC,
-                 Field.NPPBH,   Field.NPPBV,   Field.NBPP,    Field.IDLVL,   Field.IALVL,
-                 Field.ILOC,    Field.IMAG,    Field.UDIDL,   Field.UDID,    Field.IXSHDL,
-                 Field.IXSHD ]
+                 Field.ICORDS,  Field.IGEOLO,  Field.NICOM,   Field.IC,      Field.NBANDS,
+                 Field.ISYNC,   Field.IMODE,   Field.NBPR,    Field.NBPC,    Field.NPPBH,
+                 Field.NPPBV,   Field.NBPP,    Field.IDLVL,   Field.IALVL,   Field.ILOC,
+                 Field.IMAG,    Field.UDIDL,   Field.UDID,    Field.IXSHDL,  Field.IXSHD ]
 
 
 class Image_Subheader:
@@ -206,7 +205,7 @@ class Image_Subheader:
             field_default   = fld[3]
             field_is_fixed  = fld[4]
             field_name      = fld[5]
-            #logger.debug( f'Processing ID {field_pos}, Name: {field}, Len: {field_length}')
+            logger.debug( f'Processing ID {field_pos}, Name: {field}, Len: {field_length}')
 
             if field_length == 0 and len(size_queue) > 0:
                 field_length = size_queue.popleft()
@@ -222,7 +221,7 @@ class Image_Subheader:
                           'field': field,
                           'type': field_type,
                           'data': field_type(field_data, field_length) }
-            #logging.debug( f'    -> Value: [{new_entry["data"].value()}]' )
+            logging.debug( f'    -> Value: [{new_entry["data"].value()}]' )
 
             #  Number of Image Comments
             if field == Field.NICOM:
@@ -230,6 +229,16 @@ class Image_Subheader:
                 for _ in range( nicom ):
                     fields.appendleft( Field.ICOM_N  )
             
+            #  Comrat doesn't work for NC and NM
+            if field == Field.IC:
+
+                ic_val = new_entry['data'].value()
+                if ic_val == 'NC' or ic_val == 'NM':
+                    pass
+                else:
+                    fields.appendleft( Field.COMRAT )
+
+
             # Image Band Data
             if field == Field.NBANDS:
                 nbands = new_entry['data'].value()
